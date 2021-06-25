@@ -45,6 +45,42 @@ app.get('/containers/:id', (req: Request, res: Response) => {
   })
 })
 
+app.get('/containers/:id/start', (req: Request, res: Response) => {
+  const container = docker.getContainer(req.params.id)
+
+  container.start((err, data) => {
+    if (err) {
+      throw err
+    }
+    // debug(data)
+    res.send(data)
+  })
+})
+
+app.get('/containers/:id/stop', (req: Request, res: Response) => {
+  const container = docker.getContainer(req.params.id)
+
+  container.stop((err, data) => {
+    if (err) {
+      throw err
+    }
+    // debug(data)
+    res.send(data)
+  })
+})
+
+app.get('/containers/:id/restart', (req: Request, res: Response) => {
+  const container = docker.getContainer(req.params.id)
+
+  container.restart((err, data) => {
+    if (err) {
+      throw err
+    }
+    // debug(data)
+    res.send(data)
+  })
+})
+
 const wsServer = new WebSocket.Server({ port: 4001 })
 
 const getLogStream = (id: string) => {
