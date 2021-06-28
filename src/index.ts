@@ -155,6 +155,23 @@ wsServer.on('connection', (socket) => {
   socket.send('welcome!')
 })
 
-app.listen(port, () => {
-  console.log(`App listening at http://localhost:${port}`)
-})
+const isProduction = 'production' === process.env.NODE_ENV
+const pathToFE = isProduction ? '../fe/build' : 'fe/build'
+
+app.use(express.static(pathToFE))
+
+const launchProxy = async () => {
+  const proxyPort = 9000
+  const Proxy = require('http-proxy')
+  Proxy.createProxyServer({ target: { socketPath: '/var/run/docker.sock' } }).listen(proxyPort)
+  console.log(`Proxy listening at http://localhost:${proxyPort}`)
+}
+
+const launchServer = async () => {
+  app.listen(port, () => {
+    console.log(`App listening at http://localhost:${port}`)
+  })
+}
+
+launchProxy()
+launchServer()
