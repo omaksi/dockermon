@@ -26,6 +26,7 @@ socket.addEventListener('message', (event) => {
 const App = () => {
   const [containers, setContainers] = useState<Dockerode.ContainerInfo[]>([])
   const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null)
+  const [selectedContainers, setSelectedContainers] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadContainers()
@@ -64,6 +65,7 @@ const App = () => {
     const c = await stopContainer(id)
     console.log(c)
   }
+
   // const handleLogsClick = async (id: string) => {
   //   // const c = await containerLogs(id)
   //   // console.log(c)
@@ -71,29 +73,39 @@ const App = () => {
   // }
 
   const handleContainerSelect = async (id: string) => {
-    setSelectedContainerId(id)
+    const newSelectedContainers = new Set(selectedContainers)
+
+    if (selectedContainers.has(id)) {
+      newSelectedContainers.delete(id)
+    } else {
+      newSelectedContainers.add(id)
+    }
+
+    setSelectedContainers(newSelectedContainers)
   }
 
   return (
     <div className="App">
-      <header className="App-header">Docker Monitor</header>
+      <header className="App-header">
+        Docker Monitor /////// Containers:{' '}
+        {containers &&
+          containers.map((container) => {
+            return (
+              <button key={container.Id} onClick={() => handleContainerSelect(container.Id)}>
+                {container.Names[0]}
+              </button>
+            )
+          })}
+      </header>
 
       <main>
-        <nav>
+        {/* <nav>
           {containers.find((container) => container.Id === selectedContainerId)?.Names[0]}
           <br />
           <br />
-          {containers &&
-            containers.map((container) => {
-              return (
-                <button onClick={() => handleContainerSelect(container.Id)}>
-                  {container.Names[0]}
-                </button>
-              )
-            })}
-        </nav>
+        </nav> */}
         <div className="mainWrapper">
-          <div className="actions">
+          {/* <div className="actions">
             <button
               disabled={!selectedContainerId}
               onClick={() => handleStartClick(selectedContainerId)}
@@ -118,16 +130,49 @@ const App = () => {
             >
               Inspect
             </button>
-          </div>
+          </div> */}
 
-          <div className="logViewWrapper">
-            {/* {containers &&
-          containers.map((container) => {
-            return <LogView key={container.Id} url={getLogsUrl(container.Id)}></LogView>
-          })} */}
-            {selectedContainerId && (
-              <LogView key={selectedContainerId} url={getLogsUrl(selectedContainerId)}></LogView>
-            )}
+          {/* {containers &&
+    containers.map((container) => {
+      return <LogView key={container.Id} url={getLogsUrl(container.Id)}></LogView>
+    })} */}
+
+          <div className="logViewsWrapper">
+            {Array.from(selectedContainers).map((containerId) => {
+              console.log(containerId)
+              return (
+                <div
+                  key={containerId}
+                  style={{ width: 100 / selectedContainers.size + '%' }}
+                  className="logViewWrapper"
+                >
+                  <div className="logViewHeading">
+                    {containers.find((container) => container.Id === containerId)?.Names[0]}
+                    <div className="actions">
+                      <button disabled={!containerId} onClick={() => handleStartClick(containerId)}>
+                        Start
+                      </button>
+                      <button disabled={!containerId} onClick={() => handleStopClick(containerId)}>
+                        Stop
+                      </button>
+                      <button
+                        disabled={!containerId}
+                        onClick={() => handleRestartClick(containerId)}
+                      >
+                        Restart
+                      </button>
+                      <button
+                        disabled={!containerId}
+                        onClick={() => handleInspectClick(containerId)}
+                      >
+                        Inspect
+                      </button>
+                    </div>
+                  </div>
+                  <LogView url={getLogsUrl(containerId)}></LogView>
+                </div>
+              )
+            })}
           </div>
         </div>
       </main>

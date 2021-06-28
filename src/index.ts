@@ -8,7 +8,8 @@ Debug.enable('main')
 const debug = Debug('main')
 import stream from 'stream'
 import http from 'http'
-const docker = new Docker({ protocol: 'http', host: '127.0.0.1', port: 9000 })
+// const docker = new Docker({ protocol: 'http', host: '127.0.0.1', port: 9000 })
+const docker = new Docker({ socketPath: '/var/run/docker.sock' })
 
 import express from 'express'
 import WebSocket from 'ws'

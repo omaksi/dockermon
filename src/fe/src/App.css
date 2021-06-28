@@ -36,9 +36,29 @@ nav {
   width: 100%;
 }
 
-.logViewWrapper {
+.logViewsWrapper {
   display: flex;
   flex-direction: row;
   height: calc(100vh - 120px);
   width: 100%;
+}
+
+.logViewWrapper {
+  /* position: relative; */
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  width: 100%;
+}
+
+.logViewHeading {
+  display: flex;
+  flex-direction: row;
+  /* position: absolute;
+  top: 0;
+  left: 0; */
+}
+
+.actions {
+  margin-left: 10px;
 }

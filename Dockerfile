@@ -1,15 +1,15 @@
 FROM node:14-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY src /app
+COPY src /app/src
 
-WORKDIR /usr/src/app/src/fe
+WORKDIR /app/src/fe
 
 RUN yarn
 RUN yarn run build
 
-WORKDIR /usr/src/app/src
+WORKDIR /app/src
 
 RUN yarn
 RUN yarn run build
