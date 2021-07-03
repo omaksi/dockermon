@@ -25,12 +25,45 @@ const port = 4000
 app.use(cors())
 
 app.get('/containers', (req: Request, res: Response) => {
-  docker.listContainers((err, containers) => {
+  docker.listContainers({ all: true }, (err, containers) => {
     if (err) {
       throw err
     }
     // debug(containers)
     res.send(containers)
+  })
+})
+
+app.get('/images', (req: Request, res: Response) => {
+  docker.listImages((err, images) => {
+    if (err) {
+      throw err
+    }
+    // debug(images)
+    res.send(images)
+  })
+})
+
+app.get('/networks', (req: Request, res: Response) => {
+  docker.listNetworks((err, networks) => {
+    if (err) {
+      throw err
+    }
+
+    networks?.sort((a, b) => (a.Id > b.Id ? 1 : -1))
+    // debug(networks)
+    res.send(networks)
+  })
+})
+
+app.get('/volumes', (req: Request, res: Response) => {
+  docker.listVolumes((err, volumes) => {
+    if (err) {
+      throw err
+    }
+    volumes?.Volumes.sort((a, b) => (a.Name > b.Name ? 1 : -1))
+    // debug(volumes)
+    res.send(volumes?.Volumes)
   })
 })
 
@@ -161,12 +194,12 @@ const pathToFE = isProduction ? '../fe/build' : 'fe/build'
 
 app.use(express.static(pathToFE))
 
-const launchProxy = async () => {
-  const proxyPort = 9000
-  const Proxy = require('http-proxy')
-  Proxy.createProxyServer({ target: { socketPath: '/var/run/docker.sock' } }).listen(proxyPort)
-  console.log(`Proxy listening at http://localhost:${proxyPort}`)
-}
+// const launchProxy = async () => {
+//   const proxyPort = 9000
+//   const Proxy = require('http-proxy')
+//   Proxy.createProxyServer({ target: { socketPath: '/var/run/docker.sock' } }).listen(proxyPort)
+//   console.log(`Proxy listening at http://localhost:${proxyPort}`)
+// }
 
 const launchServer = async () => {
   app.listen(port, () => {
@@ -174,5 +207,5 @@ const launchServer = async () => {
   })
 }
 
-launchProxy()
+// launchProxy()
 launchServer()

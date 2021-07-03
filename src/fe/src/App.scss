@@ -8,6 +8,10 @@
   background-color: #282c34;
 }
 
+button.highlight {
+  color: blue;
+}
+
 header {
   width: 100%;
   height: 80px;
@@ -23,6 +27,48 @@ nav {
   width: 300px;
   display: flex;
   flex-direction: column;
+
+  button {
+    display: block;
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 10px;
+    text-align: left;
+    cursor: pointer;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    width: 290px;
+    position: relative;
+
+    &:hover {
+      color: lightgrey;
+    }
+  }
+}
+
+.dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 5px;
+  border: 1px solid white;
+  background-color: grey;
+
+  &.running {
+    background-color: green;
+  }
+  &.exited {
+    background-color: red;
+  }
+  &.dead {
+    background-color: red;
+  }
+  &.paused {
+    background-color: orange;
+  }
 }
 
 .actions {
@@ -39,6 +85,7 @@ nav {
 .logViewsWrapper {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   height: calc(100vh - 120px);
   width: 100%;
 }
