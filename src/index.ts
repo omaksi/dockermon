@@ -22,6 +22,11 @@ const port = 4000
 
 // const server = http.createServer()
 
+// express handle error
+const handleError = (err: Error) => {
+  debug('error', err)
+}
+
 // express js log request url
 app.use(function (req, res, next) {
   debug('%s %s', req.method, req.url)
@@ -33,7 +38,8 @@ app.use(cors())
 app.get('/containers', (req: Request, res: Response) => {
   docker.listContainers({ all: true }, (err, containers) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     // debug(containers)
     res.send(containers)
@@ -43,7 +49,8 @@ app.get('/containers', (req: Request, res: Response) => {
 app.get('/images', (req: Request, res: Response) => {
   docker.listImages((err, images) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     // debug(images)
     res.send(images)
@@ -53,7 +60,8 @@ app.get('/images', (req: Request, res: Response) => {
 app.get('/networks', (req: Request, res: Response) => {
   docker.listNetworks((err, networks) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
 
     networks?.sort((a, b) => (a.Id > b.Id ? 1 : -1))
@@ -65,7 +73,8 @@ app.get('/networks', (req: Request, res: Response) => {
 app.get('/volumes', (req: Request, res: Response) => {
   docker.listVolumes((err, volumes) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     volumes?.Volumes.sort((a, b) => (a.Name > b.Name ? 1 : -1))
     // debug(volumes)
@@ -78,7 +87,8 @@ app.get('/containers/:id', (req: Request, res: Response) => {
 
   container.inspect((err, data) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     // debug(data)
     res.send(data)
@@ -90,7 +100,8 @@ app.get('/networks/:id', (req: Request, res: Response) => {
 
   network.inspect((err, data) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     debug(data)
     res.send(data)
@@ -102,7 +113,8 @@ app.get('/images/:id', (req: Request, res: Response) => {
 
   image.inspect((err, data) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     // debug(data)
     res.send(data)
@@ -114,7 +126,8 @@ app.get('/volumes/:id', (req: Request, res: Response) => {
 
   volume.inspect((err, data) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     // debug(data)
     res.send(data)
@@ -126,7 +139,8 @@ app.get('/containers/:id/start', (req: Request, res: Response) => {
 
   container.start((err, data) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     // debug(data)
     res.send(data)
@@ -138,7 +152,8 @@ app.get('/containers/:id/stop', (req: Request, res: Response) => {
 
   container.stop((err, data) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     // debug(data)
     res.send(data)
@@ -150,7 +165,8 @@ app.get('/containers/:id/restart', (req: Request, res: Response) => {
 
   container.restart((err, data) => {
     if (err) {
-      throw err
+      handleError(err)
+      res.send(500)
     }
     // debug(data)
     res.send(data)

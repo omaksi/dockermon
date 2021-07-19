@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import ReactJson from 'react-json-view'
-import { inspect } from '../actions/actions'
+import { getLogsUrl, inspect } from '../actions/actions'
 import debug from 'debug'
 import './Monitor.scss'
+import LogView from './LogView'
 
 const log = debug('fe:Monitor')
 
@@ -16,11 +17,15 @@ type MonitorProps = {
 
 const Monitor = (props: MonitorProps) => {
   const [inspectResult, setInspectResult] = useState<any>({})
+  const [showLog, setShowLog] = useState<boolean>(false)
 
   useEffect(() => {
     log('Monitor useEffect')
     const fetchInspect = async () => {
       log('fetchInspect')
+      if (showLog) {
+        return
+      }
       try {
         const c = await inspect(props.id, props.type)
         log(c)
@@ -36,7 +41,7 @@ const Monitor = (props: MonitorProps) => {
       console.log('This will run every second!')
     }, 5000)
     return () => clearInterval(interval)
-  }, [props.id, props.type])
+  }, [props.id, props.type, showLog])
 
   return (
     <div style={props.style} className="Monitor">
@@ -44,15 +49,34 @@ const Monitor = (props: MonitorProps) => {
         {props.displayName} <span className="type">{props.type}</span>
         <br />
         <span className="id">{props.id}</span>
-        {/* <div className="actions">
-          <button>inspect</button>
-        </div> */}
+        {props.type === 'container' && (
+          <div className="actions">
+            <button
+              onClick={() => {
+                setShowLog(false)
+              }}
+            >
+              inspect
+            </button>
+            <button
+              onClick={() => {
+                setShowLog(true)
+              }}
+            >
+              log
+            </button>
+          </div>
+        )}
         <div className="close" onClick={props.onClose}>
           X
         </div>
       </div>
       <div className="content">
-        <ReactJson theme={'monokai'} src={inspectResult} />
+        {(!showLog || props.type !== 'container') && (
+          <ReactJson theme={'monokai'} src={inspectResult} />
+        )}
+
+        {showLog && props.type === 'container' && <LogView url={getLogsUrl(props.id)}></LogView>}
       </div>
     </div>
   )
