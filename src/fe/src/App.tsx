@@ -2,8 +2,6 @@ import './App.scss'
 import { useEffect, useState } from 'react'
 import Dockerode from 'dockerode'
 import {
-  getLogsUrl,
-  inspectContainer,
   listContainers,
   listImages,
   listNetworks,
@@ -12,8 +10,10 @@ import {
   // startContainer,
   // stopContainer,
 } from './actions/actions'
-import LogView from './components/LogView'
+// import LogView from './components/LogView'
 import Dot from './components/Dot'
+import { GroupedContainers, Monitor, MonitorTypes } from './types'
+import MonitorView from './components/Monitor'
 
 // const socket = new WebSocket('ws://localhost:4001')
 // socket.addEventListener('message', (event) => {
@@ -27,16 +27,34 @@ import Dot from './components/Dot'
 //   return fetch(`${DOCKER_PATH}/containers/${id}/logs`).then((res) => res.json())
 // }
 
-type TGroupedContainers = { [key: string]: Dockerode.ContainerInfo[] }
-
 const App = () => {
-  const [containers, setContainers] = useState<Dockerode.ContainerInfo[]>([])
-  const [groupedContainers, setGroupedContainers] = useState<TGroupedContainers>({})
+  // const [containers, setContainers] = useState<Dockerode.ContainerInfo[]>([])
+  const [groupedContainers, setGroupedContainers] = useState<GroupedContainers>({})
   const [images, setImages] = useState<Dockerode.ImageInfo[]>([])
   const [networks, setNetworks] = useState<Dockerode.NetworkInspectInfo[]>([])
   const [volumes, setVolumes] = useState<Dockerode.VolumeInspectInfo[]>([])
   // const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null)
   const [selectedContainers, setSelectedContainers] = useState<Set<string>>(new Set())
+  const [monitors, setMonitors] = useState<Map<string, Monitor>>(new Map())
+
+  const addMonitor = (id: string, type: MonitorTypes) => {
+    const newMonitors = new Map(monitors)
+    newMonitors.set(id, { id, type })
+    setMonitors(newMonitors)
+  }
+  const removeMonitor = (id: string) => {
+    const newMonitors = new Map(monitors)
+    newMonitors.delete(id)
+    setMonitors(newMonitors)
+  }
+
+  const toggleMonitor = (id: string, type: MonitorTypes) => {
+    if (monitors.has(id)) {
+      removeMonitor(id)
+    } else {
+      addMonitor(id, type)
+    }
+  }
 
   useEffect(() => {
     loadContainers()
@@ -56,8 +74,8 @@ const App = () => {
 
   const loadContainers = async () => {
     const c: Dockerode.ContainerInfo[] = await listContainers()
-    console.log(c)
-    setContainers(c)
+    // console.log(c)
+    // setContainers(c)
 
     // const newC: { [key: string]: string } = {}
     const newC: { [key: string]: Dockerode.ContainerInfo[] } = { undefined: [] }
@@ -90,20 +108,21 @@ const App = () => {
     console.log(c)
     setVolumes(c)
   }
+
   const loadNetworks = async () => {
     const c = await listNetworks()
     console.log(c)
     setNetworks(c)
   }
 
-  const handleInspectClick = async (id: string | null) => {
-    console.log('!!!!handleInspectClick', id)
-    if (!id) {
-      return
-    }
-    const c = await inspectContainer(id)
-    console.log(c)
-  }
+  // const handleInspectClick = async (id: string | null) => {
+  //   console.log('!!!!handleInspectClick', id)
+  //   if (!id) {
+  //     return
+  //   }
+  //   const c = await inspectContainer(id)
+  //   console.log(c)
+  // }
   // const handleRestartClick = async (id: string | null) => {
   //   if (!id) {
   //     return
@@ -144,6 +163,12 @@ const App = () => {
     setSelectedContainers(newSelectedContainers)
   }
 
+  const handleMonitorSelect = async (id: string, type: MonitorTypes) => {
+    const newMonitors = new Map(monitors)
+    newMonitors.set(id, { id, type })
+    setMonitors(newMonitors)
+  }
+
   return (
     <div className="App">
       <header className="App-header">
@@ -156,16 +181,19 @@ const App = () => {
           {groupedContainers &&
             Object.entries(groupedContainers).map(([key, containers]) => {
               return (
-                <div>
+                <div key={key}>
                   {key !== 'undefined' && containers[0].Labels['com.docker.compose.project']}
                   {containers.map((container) => {
                     return (
                       <button
                         key={container.Id}
-                        onClick={() => handleContainerSelect(container.Id)}
-                        className={selectedContainers.has(container.Id) ? 'highlight' : ''}
+                        onClick={() => toggleMonitor(container.Id, 'container')}
+                        // onClick={() => handleContainerSelect(container.Id)}
+                        className={monitors.has(container.Id) ? 'highlight' : ''}
                       >
                         {container.Names[0]}
+                        {'   '}
+                        <span className="containerState">{container.State.toLowerCase()}</span>
                         <Dot status={container.State.toLowerCase()}></Dot>
                       </button>
                     )
@@ -210,7 +238,7 @@ const App = () => {
               return (
                 <button
                   key={network.Id}
-                  // onClick={() => handlenetworkSelect(network.Id)}
+                  onClick={() => handleMonitorSelect(network.Id, 'network')}
                   // className={selectednetworks.has(network.Id) ? 'highlight' : ''}
                 >
                   {network.Name}
@@ -241,22 +269,7 @@ const App = () => {
               return <LogView key={container.Id} url={getLogsUrl(container.Id)}></LogView>
             })} */}
 
-          <div className="logViewsWrapper">
-            {Array.from(selectedContainers).map((containerId) => {
-              // console.log(containerId)
-              return (
-                <div
-                  key={containerId}
-                  style={{
-                    width: 100 / (selectedContainers.size > 3 ? 3 : selectedContainers.size) + '%',
-                    height: 100 / Math.ceil(selectedContainers.size / 3) + '%',
-                  }}
-                  className="logViewWrapper"
-                >
-                  <div className="logViewHeading">
-                    {containers.find((container) => container.Id === containerId)?.Names[0]}
-                    <div className="actions">
-                      {/* <button disabled={!containerId} onClick={() => handleStartClick(containerId)}>
+          {/* <button disabled={!containerId} onClick={() => handleStartClick(containerId)}>
                         Start
                       </button>
                       <button disabled={!containerId} onClick={() => handleStopClick(containerId)}>
@@ -268,17 +281,44 @@ const App = () => {
                       >
                         Restart
                       </button> */}
-                      <button
-                        disabled={!containerId}
-                        onClick={() => handleInspectClick(containerId)}
-                      >
-                        Inspect
-                      </button>
-                    </div>
-                  </div>
-                  <LogView url={getLogsUrl(containerId)}></LogView>
-                </div>
+
+          <div className="logViewsWrapper">
+            {Array.from(monitors).map(([id, monitor]) => {
+              return (
+                <MonitorView
+                  key={monitor.id}
+                  type={monitor.type}
+                  id={monitor.id}
+                  style={{
+                    width: 100 / (monitors.size > 3 ? 3 : monitors.size) + '%',
+                    height: 100 / Math.ceil(monitors.size / 3) + '%',
+                  }}
+                />
               )
+              // console.log(containerId)
+              // return (
+              //   <div
+              //     key={id}
+              //     style={{
+              //       width: 100 / (selectedContainers.size > 3 ? 3 : selectedContainers.size) + '%',
+              //       height: 100 / Math.ceil(selectedContainers.size / 3) + '%',
+              //     }}
+              //     className="logViewWrapper"
+              //   >
+              //     <div className="logViewHeading">
+              //       {containers.find((container) => container.Id === containerId)?.Names[0]}
+              //       <div className="actions">
+              //         <button
+              //           disabled={!containerId}
+              //           onClick={() => handleInspectClick(containerId)}
+              //         >
+              //           Inspect
+              //         </button>
+              //       </div>
+              //     </div>
+              //     <LogView url={getLogsUrl(containerId)}></LogView>
+              //   </div>
+              // )
             })}
           </div>
         </div>

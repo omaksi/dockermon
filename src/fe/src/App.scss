@@ -47,6 +47,11 @@ nav {
   }
 }
 
+.containerState {
+  font-size: 11px;
+  text-align: right;
+}
+
 .dot {
   position: absolute;
   top: 8px;
@@ -108,4 +113,8 @@ nav {
 
 .actions {
   margin-left: 10px;
+}
+
+.react-json-view svg {
+  height: 0.9em !important;
 }

@@ -7,7 +7,7 @@ import { Request, Response } from 'express'
 Debug.enable('main')
 const debug = Debug('main')
 import stream from 'stream'
-import http from 'http'
+// import http from 'http'
 // const docker = new Docker({ protocol: 'http', host: '127.0.0.1', port: 9000 })
 const docker = new Docker({ socketPath: '/var/run/docker.sock' })
 
@@ -21,6 +21,12 @@ const app = express()
 const port = 4000
 
 // const server = http.createServer()
+
+// express js log request url
+app.use(function (req, res, next) {
+  debug('%s %s', req.method, req.url)
+  next()
+})
 
 app.use(cors())
 
@@ -71,6 +77,42 @@ app.get('/containers/:id', (req: Request, res: Response) => {
   const container = docker.getContainer(req.params.id)
 
   container.inspect((err, data) => {
+    if (err) {
+      throw err
+    }
+    // debug(data)
+    res.send(data)
+  })
+})
+
+app.get('/networks/:id', (req: Request, res: Response) => {
+  const network = docker.getNetwork(req.params.id)
+
+  network.inspect((err, data) => {
+    if (err) {
+      throw err
+    }
+    debug(data)
+    res.send(data)
+  })
+})
+
+app.get('/images/:id', (req: Request, res: Response) => {
+  const image = docker.getImage(req.params.id)
+
+  image.inspect((err, data) => {
+    if (err) {
+      throw err
+    }
+    // debug(data)
+    res.send(data)
+  })
+})
+
+app.get('/volumes/:id', (req: Request, res: Response) => {
+  const volume = docker.getVolume(req.params.id)
+
+  volume.inspect((err, data) => {
     if (err) {
       throw err
     }
