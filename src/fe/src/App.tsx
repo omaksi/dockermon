@@ -14,6 +14,8 @@ import {
 import Dot from './components/Dot'
 import { GroupedContainers, Monitor, MonitorTypes } from './types'
 import MonitorView from './components/Monitor'
+import debug from 'debug'
+const log = debug('fe:App')
 
 // const socket = new WebSocket('ws://localhost:4001')
 // socket.addEventListener('message', (event) => {
@@ -34,27 +36,28 @@ const App = () => {
   const [networks, setNetworks] = useState<Dockerode.NetworkInspectInfo[]>([])
   const [volumes, setVolumes] = useState<Dockerode.VolumeInspectInfo[]>([])
   // const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null)
-  const [selectedContainers, setSelectedContainers] = useState<Set<string>>(new Set())
+  // const [selectedContainers, setSelectedContainers] = useState<Set<string>>(new Set())
   const [monitors, setMonitors] = useState<Map<string, Monitor>>(new Map())
 
-  const addMonitor = (id: string, type: MonitorTypes) => {
-    const newMonitors = new Map(monitors)
-    newMonitors.set(id, { id, type })
-    setMonitors(newMonitors)
-  }
-  const removeMonitor = (id: string) => {
+  // const addMonitor = (id: string, type: MonitorTypes) => {
+  //   const newMonitors = new Map(monitors)
+  //   newMonitors.set(id, { id, type })
+  //   setMonitors(newMonitors)
+  // }
+  const closeMonitor = (id: string) => {
     const newMonitors = new Map(monitors)
     newMonitors.delete(id)
+    localStorage.setItem('monitors', JSON.stringify(Object.fromEntries(newMonitors)))
     setMonitors(newMonitors)
   }
 
-  const toggleMonitor = (id: string, type: MonitorTypes) => {
-    if (monitors.has(id)) {
-      removeMonitor(id)
-    } else {
-      addMonitor(id, type)
-    }
-  }
+  // const toggleMonitor = (id: string, type: MonitorTypes) => {
+  //   if (monitors.has(id)) {
+  //     removeMonitor(id)
+  //   } else {
+  //     addMonitor(id, type)
+  //   }
+  // }
 
   useEffect(() => {
     loadContainers()
@@ -62,8 +65,21 @@ const App = () => {
     loadVolumes()
     loadNetworks()
 
+    // load monitors from local storage
+    const monitorsFromStorage = localStorage.getItem('monitors')
+    log(`monitors from storage: ${monitorsFromStorage}`)
+    if (monitorsFromStorage) {
+      try {
+        const monitorsFromStorageJson = JSON.parse(monitorsFromStorage)
+        log(`monitors from storage json: ${monitorsFromStorageJson}`)
+        setMonitors(new Map(Object.entries(monitorsFromStorageJson)))
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
     const interval = setInterval(() => {
-      console.log('This will run every second!')
+      log('index fetch')
       loadContainers()
       loadImages()
       loadVolumes()
@@ -73,45 +89,47 @@ const App = () => {
   }, [])
 
   const loadContainers = async () => {
-    const c: Dockerode.ContainerInfo[] = await listContainers()
+    const containers: Dockerode.ContainerInfo[] = await listContainers()
     // console.log(c)
     // setContainers(c)
 
     // const newC: { [key: string]: string } = {}
-    const newC: { [key: string]: Dockerode.ContainerInfo[] } = { undefined: [] }
-    for (let i = 0; i < c.length; i++) {
-      const label = c[i].Labels['com.docker.compose.project.config_files']
+    const newContainers: { [key: string]: Dockerode.ContainerInfo[] } = { undefined: [] }
+
+    for (let i = 0; i < containers.length; i++) {
+      const label = containers[i].Labels['com.docker.compose.project.config_files']
       // console.log(c[i].Labels)
       // console.log(label)
       if (label) {
-        if (!newC[label]) {
-          newC[label] = []
+        if (!newContainers[label]) {
+          newContainers[label] = []
         }
-        newC[label].push(c[i])
+        newContainers[label].push(containers[i])
       } else {
-        newC['undefined'].push(c[i])
+        newContainers['undefined'].push(containers[i])
       }
     }
-    console.log(newC)
 
-    setGroupedContainers(newC)
+    log('loadContainers', newContainers)
+
+    setGroupedContainers(newContainers)
   }
 
   const loadImages = async () => {
     const c = await listImages()
-    console.log(c)
+    log('loadImages', c)
     setImages(c)
   }
 
   const loadVolumes = async () => {
     const c = await listVolumes()
-    console.log(c)
+    log('loadVolumes', c)
     setVolumes(c)
   }
 
   const loadNetworks = async () => {
     const c = await listNetworks()
-    console.log(c)
+    log('loadNetworks', c)
     setNetworks(c)
   }
 
@@ -151,21 +169,27 @@ const App = () => {
   //   socket.send(id)
   // }
 
-  const handleContainerSelect = async (id: string) => {
-    const newSelectedContainers = new Set(selectedContainers)
+  // const handleContainerSelect = async (id: string) => {
+  //   const newSelectedContainers = new Set(selectedContainers)
 
-    if (selectedContainers.has(id)) {
-      newSelectedContainers.delete(id)
-    } else {
-      newSelectedContainers.add(id)
-    }
+  //   if (selectedContainers.has(id)) {
+  //     newSelectedContainers.delete(id)
+  //   } else {
+  //     newSelectedContainers.add(id)
+  //   }
 
-    setSelectedContainers(newSelectedContainers)
-  }
+  //   setSelectedContainers(newSelectedContainers)
+  // }
 
-  const handleMonitorSelect = async (id: string, type: MonitorTypes) => {
+  const handleMonitorSelect = async (id: string, type: MonitorTypes, displayName: string) => {
     const newMonitors = new Map(monitors)
-    newMonitors.set(id, { id, type })
+    newMonitors.set(id, { id, type, displayName })
+
+    // persist newMonitors into local storage
+    log('handleMonitorSelect', newMonitors)
+    log('handleMonitorSelect', JSON.stringify(newMonitors))
+    localStorage.setItem('monitors', JSON.stringify(Object.fromEntries(newMonitors)))
+
     setMonitors(newMonitors)
   }
 
@@ -184,14 +208,16 @@ const App = () => {
                 <div key={key}>
                   {key !== 'undefined' && containers[0].Labels['com.docker.compose.project']}
                   {containers.map((container) => {
+                    const displayName = container.Names[0]
                     return (
                       <button
                         key={container.Id}
-                        onClick={() => toggleMonitor(container.Id, 'container')}
+                        // onClick={() => toggleMonitor(container.Id, 'container')}
+                        onClick={() => handleMonitorSelect(container.Id, 'container', displayName)}
                         // onClick={() => handleContainerSelect(container.Id)}
                         className={monitors.has(container.Id) ? 'highlight' : ''}
                       >
-                        {container.Names[0]}
+                        {displayName}
                         {'   '}
                         <span className="containerState">{container.State.toLowerCase()}</span>
                         <Dot status={container.State.toLowerCase()}></Dot>
@@ -218,16 +244,18 @@ const App = () => {
           ----- Images:
           {images &&
             images.map((image) => {
+              const displayName =
+                image.RepoTags[0] ||
+                image.Labels[0] ||
+                image.RepoDigests?.[0].split('@')[0] ||
+                image.Id
               return (
                 <button
                   key={image.Id}
-                  // onClick={() => handleImageSelect(image.Id)}
+                  onClick={() => handleMonitorSelect(image.Id, 'image', displayName)}
                   // className={selectedimages.has(image.Id) ? 'highlight' : ''}
                 >
-                  {image.RepoTags ||
-                    image.Labels ||
-                    image.RepoDigests?.[0].split('@')[0] ||
-                    image.Id}
+                  {displayName}
                 </button>
               )
             })}
@@ -235,13 +263,14 @@ const App = () => {
           ----- Networks:
           {networks &&
             networks.map((network) => {
+              const displayName = network.Name
               return (
                 <button
                   key={network.Id}
-                  onClick={() => handleMonitorSelect(network.Id, 'network')}
+                  onClick={() => handleMonitorSelect(network.Id, 'network', displayName)}
                   // className={selectednetworks.has(network.Id) ? 'highlight' : ''}
                 >
-                  {network.Name}
+                  {displayName}
                 </button>
               )
             })}
@@ -249,13 +278,14 @@ const App = () => {
           ----- Volumes:
           {volumes &&
             volumes.map((volume) => {
+              const displayName = volume.Name
               return (
                 <button
                   key={volume.Name}
-                  // onClick={() => handlevolumeSelect(volume.Id)}
+                  onClick={() => handleMonitorSelect(volume.Name, 'volume', displayName)}
                   // className={selectedvolumes.has(volume.Id) ? 'highlight' : ''}
                 >
-                  {volume.Name}
+                  {displayName}
                 </button>
               )
             })}
@@ -288,6 +318,8 @@ const App = () => {
                 <MonitorView
                   key={monitor.id}
                   type={monitor.type}
+                  displayName={monitor.displayName}
+                  onClose={() => closeMonitor(id)}
                   id={monitor.id}
                   style={{
                     width: 100 / (monitors.size > 3 ? 3 : monitors.size) + '%',

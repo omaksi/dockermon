@@ -4,11 +4,13 @@ import { inspect } from '../actions/actions'
 import debug from 'debug'
 import './Monitor.scss'
 
-const log = debug('Monitor')
+const log = debug('fe:Monitor')
 
 type MonitorProps = {
   type: 'image' | 'container' | 'volume' | 'network'
   id: string
+  displayName: string
+  onClose: () => void
   style?: any
 }
 
@@ -19,12 +21,14 @@ const Monitor = (props: MonitorProps) => {
     log('Monitor useEffect')
     const fetchInspect = async () => {
       log('fetchInspect')
-      // if (props.type === 'container') {
-      const c = await inspect(props.id, props.type)
-      console.log(c)
-      setInspectResult(c)
+      try {
+        const c = await inspect(props.id, props.type)
+        log(c)
+        setInspectResult(c)
+      } catch (e) {
+        log(e)
+      }
       return
-      // }
     }
     fetchInspect()
     const interval = setInterval(() => {
@@ -37,9 +41,14 @@ const Monitor = (props: MonitorProps) => {
   return (
     <div style={props.style} className="Monitor">
       <div className="heading">
-        {props.id}
-        <div className="actions">
+        {props.displayName} <span className="type">{props.type}</span>
+        <br />
+        <span className="id">{props.id}</span>
+        {/* <div className="actions">
           <button>inspect</button>
+        </div> */}
+        <div className="close" onClick={props.onClose}>
+          X
         </div>
       </div>
       <div className="content">

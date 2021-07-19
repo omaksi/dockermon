@@ -1,3 +1,21 @@
 .Monitor {
   overflow-y: auto;
+
+  .heading {
+    position: relative;
+
+    .id {
+      font-size: 9px;
+    }
+
+    .type {
+      font-size: 9px;
+    }
+    .close {
+      position: absolute;
+      top: 0;
+      right: 5px;
+      cursor: pointer;
+    }
+  }
 }

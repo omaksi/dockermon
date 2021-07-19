@@ -5,6 +5,7 @@ export type GroupedContainers = { [key: string]: Dockerode.ContainerInfo[] }
 export type Monitor = {
   type: MonitorTypes
   id: string
+  displayName: string
 }
 
 export type MonitorTypes = 'image' | 'container' | 'volume' | 'network'
